@@ -13,7 +13,7 @@ text_processor = TextProcessor(api_key=OPENAI_API_KEY)
 # 슬랙봇에 메시지가 도착했을 때 처리하는 이벤트 핸들러
 @app.message("")
 def handle_message_events(message, say):
-    say(f"*[요청하신 텍스트가 유라님에게 전달 되었습니다. 잠시만 기다려주세요]*")
+    say(f"*[요청하신 텍스트가 유라님에게 전달 되었습니다! 잠시만 기다려주세요 :)]*")
     # 텍스트 처리
     user_input = message['text']
     processed_text = text_processor.rewrite_for_brand(user_input)
