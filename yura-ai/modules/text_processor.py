@@ -1,36 +1,38 @@
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 
 
 class TextProcessor:
-    def __init__(self, api_key, callback_handler):
-        self.api_key = api_key
-        self.callback_handler = callback_handler
-        self.system_message_template = """
-            당신은 UX Writer 입니다.
-            다음의 텍스트를 아래의 조건에 맞게 재작성하세요.
-            {tone}
-        """
-        self.prompt_template = """
-            텍스트:
-            {text}
+    def __init__(self, api_key):
+        print(f"api_key:{api_key}")
+        self.llm = ChatOpenAI(api_key=api_key, model="gpt-3.5-turbo", temperature=0.7)
 
-            결과:
-        """
+        # 시스템 메시지와 사용자 메시지를 위한 프롬프트 템플릿 설정
+        self.system_message = (
+            """"
+                역할설정:
+                    - 당신은 핀다라는 핀테크 회사의 UX Writer 입니다.
+                    - 주어진 텍스트를 아래의 요구사항과 규칙을 기반으로 새롭게 작성해야합니다.
+                요구사항:
+                    - 주어진 텍스트는 간결하고 명확하게 작성해야합니다.
 
-        self.llm = ChatOpenAI(
-            openai_api_key=self.api_key,
-            model="gpt-3.5-turbo",
-            temperature=0,
-            streaming=True,
-            callbacks=[self.callback_handler],
+                강력한 주의: 위의 조건을 지키지 않는 요약은 무효화됩니다.
+            """
         )
+        self.prompt_template = """
+                주어진 텍스트:
+                {text}
 
-    def process_text(self, input_text, tone=None):
-        system_message = SystemMessage(content=self.system_message_template.format(tone=tone))
-        human_message = HumanMessage(content=self.prompt_template.format(text=input_text))
-        messages = [system_message, human_message]
+                새로운 텍스트:
+                """
 
-        response = self.llm(messages)
-        return response
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("system", self.system_message),
+            ("human", self.prompt_template)
+        ])
+
+    def rewrite_for_brand(self, input_text):
+        formatted_prompt = self.prompt.format(text=input_text)
+        output = self.llm.invoke(formatted_prompt).content
+        print(f"output:{output}")
+        return output
