@@ -1,26 +1,30 @@
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
-from config import SLACK_BOT_TOKEN, SLACK_APP_TOKEN, SLACK_SIGNING_SECRET, OPENAI_API_KEY
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from config import OPENAI_API_KEY
 from modules.text_processor import TextProcessor
 
-# 슬랙봇 초기화
-app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+app = Flask(__name__)
+CORS(app)
 
 # TextProcessor 초기화
 text_processor = TextProcessor(api_key=OPENAI_API_KEY)
 
+# 기본 라우트 설정
+@app.route('/')
+def index():
+    return "Welcome to Yura AI - UX Writer Assistant!"
 
-# 슬랙봇에 메시지가 도착했을 때 처리하는 이벤트 핸들러
-@app.message("")
-def handle_message_events(message, say):
-    say(f"*[요청하신 텍스트가 유라님에게 전달 되었습니다! 잠시만 기다려주세요 :)]*")
+@app.route('/process', methods=['POST'])
+def process_text():
+    data = request.json
+    user_input = data.get('text')
+
     # 텍스트 처리
-    user_input = message['text']
     processed_text = text_processor.rewrite_for_brand(user_input)
-    say(f"\n{processed_text}")
+
+    return jsonify({'processed_text': processed_text})
 
 
-# 슬랙앱 실행
-if __name__ == "__main__":
-    handler = SocketModeHandler(app, SLACK_APP_TOKEN)
-    handler.start()
+if __name__ == '__main__':
+    app.run(debug=True)
